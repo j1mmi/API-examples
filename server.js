@@ -1,42 +1,14 @@
 /* eslint no-console: 0 */
 
-const path = require('path');
 const express = require('express');
-const webpack = require('webpack');
-const webpackMiddleware = require('webpack-dev-middleware');
-const webpackHotMiddleware = require('webpack-hot-middleware');
-const config = require('./webpack.config.js');
 const bodyParser = require('body-parser');
 
-const isDeveloping = process.env.NODE_ENV !== 'production';
-const port = isDeveloping ? 3000 : process.env.PORT;
+const port =  3000
 const app = express();
 
-if (isDeveloping) {
-//   const compiler = webpack(config);
-//   const middleware = webpackMiddleware(compiler, {
-//     publicPath: config.output.publicPath,
-//     contentBase: 'src',
-//     stats: {
-//       colors: true,
-//       hash: false,
-//       timings: true,
-//       chunks: false,
-//       chunkModules: false,
-//       modules: false
-//     }
-//   });
 
-//   app.use(middleware);
-//   app.use(webpackHotMiddleware(compiler));
-
-  // app.get('*', function response(req, res) {
-  //   res.write(middleware.fileSystem.readFileSync(path.join(__dirname, 'dist/index.html')));
-  //   res.end();
-  // });
-
-  app.use(bodyParser.urlencoded({extended: true}));
-  app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 const httpCodes = {
     "100": "Continue",
@@ -96,38 +68,29 @@ const httpCodes = {
     "599": "Network Connect Timeout Error"
 }
 
-  app.post('/cat/', (req,res) => {
-    var text_in = req.body.text;
-    var httpCodeIndex = Object.keys(httpCodes).indexOf(text_in)
-    if (httpCodeIndex == -1) {
-      var data = {
-        response_type: 'in_channel',
-        text: '_*INVALID INPUT*_',
-        attachments:[{
-          image_url: 'https://http.cat/400.jpg'
-        }]
-      };
-    } else {
-      var text_out = '_' + text_in + ": " + '*' + httpCodes[text_in] + '*_';
-      var data = {
-        response_type: 'in_channel',
-        text: text_out,
-        attachments:[{
-          image_url: 'https://http.cat/' + text_in + '.jpg'
-        }]
-      };
-    }
-    res.json(data);
-  });
-
-
-
-} else {
-  app.use(express.static(__dirname + '/dist'));
-  app.get('*', function response(req, res) {
-    res.sendFile(path.join(__dirname, 'dist/index.html'));
-  });
-}
+app.get('/cat/:code', (req,res) => {
+  var text_in = req.params.code;
+  var httpCodeIndex = Object.keys(httpCodes).indexOf(text_in)
+  if (httpCodeIndex == -1) {
+    var data = {
+      response_type: 'FAILURE',
+      description: 'INVALID INPUT',
+      attachments:[{
+        image_url: 'https://http.cat/400.jpg'
+      }]
+    };
+  } else {
+    var text_out = text_in + ": " + httpCodes[text_in];
+    var data = {
+      response_type: 'SUCCESS',
+      description: text_out,
+      attachments:[{
+        image_url: 'https://http.cat/' + text_in + '.jpg'
+      }]
+    };
+  }
+  res.json(data);
+});
 
 app.listen(port, '0.0.0.0', function onStart(err) {
   if (err) {
