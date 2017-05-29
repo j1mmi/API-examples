@@ -1,15 +1,27 @@
-/* eslint no-console: 0 */
-
+// this is where the modules we want to use in the code are declared.
+// Express.js is specifically used to listen for server requests and return responses. 
 const express = require('express');
+// You can ignore body-parser for now, it's not used by this code
 const bodyParser = require('body-parser');
 
+// We are going to listen for requests on port 3000.  This is just a port that isn't 
+// usually in use by computers, so can be used by the program. Any requests to port 3000
+// will be routed to our program.  
 const port =  3000
+
+// creating an instance of Express.js and assigning it to a variable - the variable "app" is declared 
+// as a version of Express.js.  Everything from here will use app to represent Express.js
 const app = express();
 
-
+// This code just enables body-parser to work correctly.  As we are not using this code
+// for anything useful, you can just ignore it.  
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
+
+// Here's a list of the possible http codes that http.cat can return (I copied these out manually by hand like a mug).  
+// The list will serve as a look-up when we receive a request on Port 3000, either to complete the response description or
+// to determine a bad request from the user (i.e. specifying a code that doesnt' exist). 
 const httpCodes = {
     "100": "Continue",
     "101": "Switching Protocols",
@@ -68,9 +80,19 @@ const httpCodes = {
     "599": "Network Connect Timeout Error"
 }
 
+// Here's the heart of the code - a couple of things:
+// - Requests for information (like this API performs) are known as GET requests - hence "app.get".  
+// Other commonly used request types are POST, PUT and DELETE.  These are HTML protocols, I'll leave you to google this. 
+// - The '/cat/:code' is the path we are looking for - ":code" is any text that is entered after cat in the URL.  This text is accessed using "req.params.code".  
+// e,g, if the path '/cat/clemFandango' was specified, then calling "req.params.code" would return clemFandango.  
+// - The information requested by the user (e.g. the URL path) is stored in the variable res, and the expected response should be supplied in the variable res. 
 app.get('/cat/:code', (req,res) => {
+  // get the path text specified after cat (e.g. 200)
   var text_in = req.params.code;
+  // Compare this value with the http codes specified above. 
   var httpCodeIndex = Object.keys(httpCodes).indexOf(text_in)
+  // If the value specified by the user can't be found in the list then -1 will be returned.  In this case we assume that the user dun fucked up, put some error 
+  // text together and assign it to the variable "data". 
   if (httpCodeIndex == -1) {
     var data = {
       response_type: 'FAILURE',
@@ -79,6 +101,7 @@ app.get('/cat/:code', (req,res) => {
         image_url: 'https://http.cat/400.jpg'
       }]
     };
+  // If the value specified by the user IS found in the list then we assemble a success response and assign it to the variable "data".
   } else {
     var text_out = text_in + ": " + httpCodes[text_in];
     var data = {
@@ -89,9 +112,13 @@ app.get('/cat/:code', (req,res) => {
       }]
     };
   }
+  // Finally, we add the JSON (the error or success text object - google "JSON", it's a useful thing to understand) to the response variable res.  This then gets
+  // sent back to the user as the response. 
   res.json(data);
 });
 
+
+// This code just starts the app object listening to port 3000, so that we can intercept requests on that port.  
 app.listen(port, '0.0.0.0', function onStart(err) {
   if (err) {
     console.log(err);
